@@ -227,6 +227,64 @@ def test_yarn_findings():
         ("Mira", "Dengar."), (None, "Give the lens"), ("Mira", "Keep it.")]
 
 
+# --- Task 4: Ren'Py ----------------------------------------------------------
+
+RPY_CHARS = """
+define m = Character("Mira", color="#c8ffc8")
+define i = Character(_("Iona"))
+define n = Character(None, kind=nvl)
+"""
+
+RPY = """
+label s01:
+    m "Dengar. The roof needs a lens."
+    n "The wind rises."
+    "Iona" "I can fix it."
+    "A plain narration line."
+    x "Who am I?"
+    play music "storm.ogg"
+    $ lens = 1
+    python:
+        a = 1
+        b = 2
+    # setup: lens
+    menu:
+        "Give the lens":
+            jump s02
+label .inner:
+    i "Still s01{w} here."
+label s02:
+    m "Oke."
+"""
+
+
+def test_renpy_findings():
+    d = story({"bible.md": BIBLE, "outline.md": OUTLINE, "chars.rpy": RPY_CHARS, "script.rpy": RPY})
+    assert found(d) == [
+        ("avoid-word", "script.rpy", 19),
+        ("missing-scene", "outline.md", 8),
+        ("mystery-no-answer", "bible.md", 23),
+        ("setup-no-payoff", "script.rpy", 12),
+        ("unchecked", "script.rpy", 0),
+        ("unknown-speaker", "script.rpy", 6),
+    ]
+    who = story_check.renpy_characters([RPY_CHARS])
+    assert who == {"m": "Mira", "i": "Iona", "n": None}
+    s = story_check.load_renpy("x.rpy", textwrap.dedent(RPY).lstrip(), who)
+    assert [sid for sid, _ in s.scenes] == ["s01", "s02"]
+    assert s.unchecked == 3
+    assert [(ln.speaker, ln.text, ln.scene) for ln in s.lines] == [
+        ("Mira", "Dengar. The roof needs a lens.", "s01"),
+        (None, "The wind rises.", "s01"),
+        ("Iona", "I can fix it.", "s01"),
+        (None, "A plain narration line.", "s01"),
+        ("x", "Who am I?", "s01"),
+        (None, "Give the lens", "s01"),
+        ("Iona", "Still s01 here.", "s01"),
+        ("Mira", "Oke.", "s02"),
+    ]
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for t in tests:
