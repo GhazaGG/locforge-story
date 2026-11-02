@@ -1,0 +1,350 @@
+#!/usr/bin/env python3
+"""LocForge Story checker: compares Ink, Yarn Spinner and Ren'Py scripts with a story bible and outline.
+
+Usage: python story_check.py <story-folder-or-files...> [--bible PATH] [--outline PATH] [--json]
+
+Prints findings grouped by severity, one per line: <file>:<line>  [<check>]  <message>,
+then voice stats per character. Exit code 1 if any finding is an error.
+Python 3.9+ standard library only.
+"""
+import argparse
+import collections
+import json
+import os
+import re
+import sys
+
+Finding = collections.namedtuple("Finding", "severity check file line message")
+Line = collections.namedtuple("Line", "file line scene speaker text")
+Tag = collections.namedtuple("Tag", "file line kind name")
+
+SEVERITIES = ("error", "warning", "info")
+EXTS = (".ink", ".yarn", ".rpy")
+DEFAULT_MAX_LINE = 120
+
+
+class Script:
+    def __init__(self, path):
+        self.path = path
+        self.scenes = []  # (scene_id, line)
+        self.lines = []  # Line
+        self.tags = []  # Tag
+        self.unchecked = 0
+
+
+def read_text(path):
+    with open(path, encoding="utf-8-sig") as f:
+        return f.read()
+
+
+def _csv(value):
+    return [x.strip() for x in value.split(",") if x.strip()]
+
+
+def _int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+# --- bible and outline -------------------------------------------------------
+
+H2 = re.compile(r"^##\s+(.+?)\s*$")
+H3 = re.compile(r"^###\s+(.+?)\s*$")
+KV = re.compile(r"^\s*[-*]\s+([A-Za-z_]+)\s*:\s*(.*?)\s*$")
+
+
+def _value(raw):
+    return re.sub(r"\s+#.*$", "", raw).strip()
+
+
+def parse_bible(text):
+    bible = {"settings": {}, "characters": [], "glossary": [], "mysteries": []}
+    section, entry = None, None
+    for n, raw in enumerate(text.splitlines(), 1):
+        m = H3.match(raw)
+        if m:
+            name = m.group(1)
+            entry = None
+            if section == "characters":
+                entry = {"name": name, "id": name.lower(), "aliases": [], "status": "alive",
+                         "dies_in": None, "avoid": [], "max_line": None, "line": n}
+                bible["characters"].append(entry)
+            elif section == "glossary":
+                entry = {"term": name, "avoid": [], "line": n}
+                bible["glossary"].append(entry)
+            elif section == "mysteries":
+                entry = {"question": name, "answer": "", "line": n}
+                bible["mysteries"].append(entry)
+            continue
+        m = H2.match(raw)
+        if m:
+            section, entry = m.group(1).lower(), None
+            continue
+        m = KV.match(raw)
+        if not m:
+            continue
+        key, val = m.group(1).lower(), _value(m.group(2))
+        if section == "settings" and entry is None:
+            bible["settings"][key] = val
+        elif section == "characters" and entry is not None:
+            if key in ("aliases", "avoid"):
+                entry[key] = _csv(val)
+            elif key == "max_line":
+                entry[key] = _int(val)
+            elif key in ("id", "status"):
+                entry[key] = val.lower()
+            elif key == "dies_in":
+                entry[key] = val or None
+        elif section == "glossary" and entry is not None and key == "avoid":
+            entry["avoid"] = _csv(val)
+        elif section == "mysteries" and entry is not None and key == "answer":
+            entry["answer"] = val
+    return bible
+
+
+OUTLINE_SCENE = re.compile(r"^###\s+(\S+)")
+
+
+def parse_outline(text):
+    scenes, current = [], None
+    for n, raw in enumerate(text.splitlines(), 1):
+        m = OUTLINE_SCENE.match(raw)
+        if m:
+            current = {"id": m.group(1), "line": n, "chars": [], "setup": [], "payoff": []}
+            scenes.append(current)
+            continue
+        if raw.startswith("#"):
+            current = None
+            continue
+        m = KV.match(raw)
+        if current is not None and m and m.group(1).lower() in ("chars", "setup", "payoff"):
+            current[m.group(1).lower()] = _csv(_value(m.group(2)))
+    return scenes
+
+
+# --- script loaders ----------------------------------------------------------
+
+def load_ink(path, text):
+    return Script(path)  # replaced in Task 2
+
+
+def load_yarn(path, text):
+    return Script(path)  # replaced in Task 3
+
+
+def renpy_characters(texts):
+    return {}  # replaced in Task 4
+
+
+def load_renpy(path, text, who):
+    return Script(path)  # replaced in Task 4
+
+
+def load_script(path, text, who):
+    ext = os.path.splitext(path)[1].lower()
+    if ext == ".ink":
+        return load_ink(path, text)
+    if ext == ".yarn":
+        return load_yarn(path, text)
+    return load_renpy(path, text, who)
+
+
+# --- checks ------------------------------------------------------------------
+
+def _index(bible):
+    index = {}
+    for c in (bible or {}).get("characters", []):
+        for key in [c["id"], c["name"]] + c["aliases"]:
+            index[key.lower()] = c
+    return index
+
+
+def _word(phrase):
+    return re.compile(r"(?<!\w)%s(?!\w)" % re.escape(phrase), re.I)
+
+
+def check(bible, bible_path, outline, outline_path, scripts):
+    out = []
+
+    def add(severity, name, path, line, message):
+        out.append(Finding(severity, name, path, line, message))
+
+    index = _index(bible)
+    max_line = _int((bible or {}).get("settings", {}).get("max_line")) or DEFAULT_MAX_LINE
+    order = {sc["id"]: i for i, sc in enumerate(outline or [])}
+    cast = {sc["id"]: {index[x.lower()]["id"] if x.lower() in index else x.lower() for x in sc["chars"]}
+            for sc in outline or []}
+    terms = [(g["term"], a, _word(a)) for g in (bible or {}).get("glossary", []) for a in g["avoid"]]
+    avoid = {c["id"]: [(a, _word(a)) for a in c["avoid"]] for c in (bible or {}).get("characters", [])}
+
+    for s in scripts:
+        if s.unchecked:
+            add("info", "unchecked", s.path, 0, "%d line(s) of code or logic were not checked." % s.unchecked)
+        for ln in s.lines:
+            char = index.get(ln.speaker.lower()) if ln.speaker else None
+            if ln.speaker and bible is not None and char is None:
+                add("error", "unknown-speaker", ln.file, ln.line,
+                    "Speaker '%s' is not in the bible (name, id or alias)." % ln.speaker)
+            limit = (char and char["max_line"]) or max_line
+            if len(ln.text) > limit:
+                add("warning", "long-line", ln.file, ln.line,
+                    "Line is %d characters; the limit is %d." % (len(ln.text), limit))
+            for term, wrong, rx in terms:
+                if rx.search(ln.text):
+                    add("warning", "term-variant", ln.file, ln.line,
+                        "'%s' is a wrong spelling of '%s'." % (wrong, term))
+            if char is None:
+                continue
+            for phrase, rx in avoid[char["id"]]:
+                if rx.search(ln.text):
+                    add("warning", "avoid-word", ln.file, ln.line,
+                        "%s never says '%s' (bible: avoid)." % (char["name"], phrase))
+            dies = char["dies_in"]
+            if dies in order and ln.scene in order and order[ln.scene] > order[dies]:
+                add("warning", "dead-speaker", ln.file, ln.line,
+                    "%s dies in %s but speaks in %s." % (char["name"], dies, ln.scene))
+            if cast.get(ln.scene) and char["id"] not in cast[ln.scene]:
+                add("info", "uninvited-speaker", ln.file, ln.line,
+                    "%s speaks in %s but is not in its outline chars." % (char["name"], ln.scene))
+
+    if outline is not None and scripts:
+        found = {}
+        for s in scripts:
+            for sid, n in s.scenes:
+                found.setdefault(sid, (s.path, n))
+        for sc in outline:
+            if sc["id"] not in found:
+                add("warning", "missing-scene", outline_path, sc["line"],
+                    "Outline scene '%s' has no matching knot, node or label." % sc["id"])
+        for sid, (path, n) in found.items():
+            if sid not in order:
+                add("info", "unplanned-scene", path, n, "Scene '%s' is not in the outline." % sid)
+
+    setups, payoffs = {}, {}
+    for s in scripts:
+        for t in s.tags:
+            (setups if t.kind == "setup" else payoffs).setdefault(t.name, t)
+    for name, t in setups.items():
+        if name not in payoffs:
+            add("warning", "setup-no-payoff", t.file, t.line, "Setup '%s' is never paid off." % name)
+    for name, t in payoffs.items():
+        if name not in setups:
+            add("warning", "payoff-no-setup", t.file, t.line, "Payoff '%s' has no setup." % name)
+
+    for m in (bible or {}).get("mysteries", []):
+        if not m["answer"]:
+            add("warning", "mystery-no-answer", bible_path, m["line"],
+                "Mystery '%s' has no answer." % m["question"])
+    return out
+
+
+def voice_stats(bible, scripts):
+    index, acc = _index(bible), {}
+    for s in scripts:
+        for ln in s.lines:
+            if not ln.speaker:
+                continue
+            c = index.get(ln.speaker.lower())
+            a = acc.setdefault(c["name"] if c else ln.speaker,
+                               {"lines": 0, "words": 0, "counter": collections.Counter()})
+            words = re.findall(r"\w+", ln.text.lower())
+            a["lines"] += 1
+            a["words"] += len(words)
+            a["counter"].update(w for w in words if len(w) >= 4 and not w.isdigit())
+    return {name: {"lines": a["lines"], "words_per_line": round(a["words"] / a["lines"], 1),
+                   "top_words": [w for w, _ in a["counter"].most_common(5)]}
+            for name, a in sorted(acc.items())}
+
+
+# --- running -----------------------------------------------------------------
+
+def discover(paths):
+    files = []
+    for p in paths:
+        if os.path.isdir(p):
+            for root, dirs, names in os.walk(p):
+                dirs.sort()
+                files += [os.path.join(root, n) for n in sorted(names) if n.lower().endswith(EXTS)]
+        else:
+            files.append(p)
+    return files
+
+
+def _read(path, findings):
+    try:
+        return read_text(path)
+    except (OSError, UnicodeDecodeError) as e:
+        findings.append(Finding("error", "parse", path, 0, "Cannot read file: %s" % e))
+        return None
+
+
+def run(paths, bible_path=None, outline_path=None):
+    findings = []
+    base = paths[0] if os.path.isdir(paths[0]) else (os.path.dirname(paths[0]) or ".")
+    loaded = {}
+    for kind, path, parse in (("bible", bible_path, parse_bible), ("outline", outline_path, parse_outline)):
+        if path is None and os.path.isfile(os.path.join(base, kind + ".md")):
+            path = os.path.join(base, kind + ".md")
+        loaded[kind] = (path, None)
+        if path is None:
+            findings.append(Finding("info", "no-" + kind, base, 0,
+                                    "No %s.md found; checks that need it were skipped." % kind))
+            continue
+        text = _read(path, findings)
+        loaded[kind] = (path, parse(text) if text is not None else None)
+
+    texts = []
+    for f in discover(paths):
+        if not f.lower().endswith(EXTS):
+            findings.append(Finding("error", "parse", f, 0, "Unsupported file type (use .ink, .yarn or .rpy)."))
+            continue
+        text = _read(f, findings)
+        if text is not None:
+            texts.append((f, text))
+    who = renpy_characters(t for f, t in texts if f.lower().endswith(".rpy"))
+    scripts = [load_script(f, t, who) for f, t in texts]
+
+    (bpath, bible), (opath, outline) = loaded["bible"], loaded["outline"]
+    findings += check(bible, bpath, outline, opath, scripts)
+    return findings, voice_stats(bible, scripts)
+
+
+def format_text(findings, stats):
+    out = []
+    for sev in SEVERITIES:
+        group = sorted((f for f in findings if f.severity == sev), key=lambda f: (f.file, f.line, f.check))
+        if group:
+            out.append("%s (%d)" % (sev.upper(), len(group)))
+            out += ["  %s:%d  [%s]  %s" % (f.file, f.line, f.check, f.message) for f in group]
+    if not findings:
+        out.append("No findings.")
+    if stats:
+        out.append("VOICE")
+        for name, st in stats.items():
+            out.append("  %s: %d lines, %.1f words/line, top: %s"
+                       % (name, st["lines"], st["words_per_line"], ", ".join(st["top_words"]) or "-"))
+    return "\n".join(out)
+
+
+def main(argv=None):
+    p = argparse.ArgumentParser(description="Check game story scripts against a story bible and outline.")
+    p.add_argument("paths", nargs="+", help="story folder(s) or .ink / .yarn / .rpy files")
+    p.add_argument("--bible", help="bible file (default: bible.md in the first folder)")
+    p.add_argument("--outline", help="outline file (default: outline.md in the first folder)")
+    p.add_argument("--json", action="store_true", help="print JSON instead of text")
+    args = p.parse_args(argv)
+    findings, stats = run(args.paths, args.bible, args.outline)
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+    if args.json:
+        print(json.dumps({"findings": [f._asdict() for f in findings], "stats": stats},
+                         ensure_ascii=False, indent=2))
+    else:
+        print(format_text(findings, stats))
+    return 1 if any(f.severity == "error" for f in findings) else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
