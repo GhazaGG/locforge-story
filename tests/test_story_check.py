@@ -310,6 +310,25 @@ def test_renpy_attributes_and_screens():
     assert "unknown-speaker" not in names(d)
 
 
+# --- Task 5: example and templates -------------------------------------------
+
+ROOT = os.path.join(HERE, "..")
+
+
+def test_example_story_is_clean():
+    findings, stats = story_check.run([os.path.join(ROOT, "examples", "menara-lensa")])
+    assert findings == [], story_check.format_text(findings, stats)
+    assert sorted(stats) == ["Iona", "Mira"]
+
+
+def test_templates_parse():
+    with open(os.path.join(ROOT, "templates", "bible.md"), encoding="utf-8") as f:
+        b = story_check.parse_bible(f.read())
+    assert b["settings"]["max_line"] == "120" and len(b["characters"]) == 2
+    with open(os.path.join(ROOT, "templates", "outline.md"), encoding="utf-8") as f:
+        assert [s["id"] for s in story_check.parse_outline(f.read())] == ["s01", "s02"]
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for t in tests:
