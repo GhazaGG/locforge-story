@@ -16,11 +16,14 @@ import sys
 
 Finding = collections.namedtuple("Finding", "severity check file line message")
 Line = collections.namedtuple("Line", "file line scene speaker text")
-Tag = collections.namedtuple("Tag", "file line kind name")
+Tag = collections.namedtuple("Tag", "file line scene kind name")
 
 SEVERITIES = ("error", "warning", "info")
 EXTS = (".ink", ".yarn", ".rpy")
 DEFAULT_MAX_LINE = 120
+CHANNELS = ("dialogue", "cutscene", "narration", "quest", "object", "barks", "mechanic", "ui")
+OPTIONAL_CHANNELS = ("object", "barks", "ui")
+TEXT_CHANNELS = ("object", "barks", "quest", "ui")  # written under a channel: tag
 
 
 class Script:
@@ -112,28 +115,32 @@ def parse_outline(text):
     for n, raw in enumerate(text.splitlines(), 1):
         m = OUTLINE_SCENE.match(raw)
         if m:
-            current = {"id": m.group(1), "line": n, "chars": [], "setup": [], "payoff": []}
+            current = {"id": m.group(1), "line": n, "chars": [], "setup": [], "payoff": [],
+                       "channel": [], "support": [], "critical": ""}
             scenes.append(current)
             continue
         if raw.startswith("#"):
             current = None
             continue
         m = KV.match(raw)
-        if current is not None and m and m.group(1).lower() in ("chars", "setup", "payoff"):
-            current[m.group(1).lower()] = _csv(_value(m.group(2)))
+        key = m.group(1).lower() if m else None
+        if current is not None and key in ("chars", "setup", "payoff", "channel", "support"):
+            current[key] = _csv(_value(m.group(2)))
+        elif current is not None and key == "critical":
+            current[key] = _value(m.group(2)).lower()
     return scenes
 
 
 # --- script loaders ----------------------------------------------------------
 
-TAG_SLASH = re.compile(r"^//\s*(setup|payoff)\s*:\s*(.+?)\s*$", re.I)
-TAG_HASH = re.compile(r"^#\s*(setup|payoff)\s*:\s*(.+?)\s*$", re.I)
+TAG_SLASH = re.compile(r"^//\s*(setup|payoff|channel)\s*:\s*(.+?)\s*$", re.I)
+TAG_HASH = re.compile(r"^#\s*(setup|payoff|channel)\s*:\s*(.+?)\s*$", re.I)
 SPEAKER = re.compile(r"^([^\s:{}\[\]<>\"][^:{}\[\]<>\"]{0,40}?)\s*:\s+(\S.*)$")
 
 
-def _add_tags(script, n, m):
+def _add_tags(script, n, scene, m):
     for name in _csv(m.group(2)):
-        script.tags.append(Tag(script.path, n, m.group(1).lower(), name.lower()))
+        script.tags.append(Tag(script.path, n, scene, m.group(1).lower(), name.lower()))
 
 
 def _add_line(script, n, scene, speaker, text):
@@ -173,7 +180,7 @@ def load_ink(path, text):
             continue
         m = TAG_SLASH.match(line)
         if m:
-            _add_tags(s, n, m)
+            _add_tags(s, n, scene, m)
             continue
         if not line or line.startswith("//"):
             continue
@@ -223,7 +230,7 @@ def load_yarn(path, text):
             continue
         m = TAG_SLASH.match(line)
         if m:
-            _add_tags(s, n, m)
+            _add_tags(s, n, scene, m)
             continue
         if not line or line.startswith("//") or re.match(r"^<<.*>>$", line):
             continue
@@ -284,7 +291,7 @@ def load_renpy(path, text, who):
                 continue
         m = TAG_HASH.match(line)
         if m:
-            _add_tags(s, n, m)
+            _add_tags(s, n, scene, m)
             continue
         if not line or line.startswith("#") or line.startswith("define "):
             continue
@@ -404,6 +411,8 @@ def check(bible, bible_path, outline, outline_path, scripts):
     setups, payoffs = {}, {}
     for s in scripts:
         for t in s.tags:
+            if t.kind == "channel":
+                continue
             (setups if t.kind == "setup" else payoffs).setdefault(t.name, t)
     for name, t in setups.items():
         if name not in payoffs:
@@ -411,6 +420,27 @@ def check(bible, bible_path, outline, outline_path, scripts):
     for name, t in payoffs.items():
         if name not in setups:
             add("warning", "payoff-no-setup", t.file, t.line, "Payoff '%s' has no setup." % name)
+
+    for sc in outline or []:
+        for cid in sc["channel"] + sc["support"]:
+            if cid.lower() not in CHANNELS:
+                add("warning", "unknown-channel", outline_path, sc["line"],
+                    "Scene '%s' uses unknown channel '%s'." % (sc["id"], cid))
+        if sc["critical"] == "yes" and sc["channel"] and all(c.lower() in OPTIONAL_CHANNELS for c in sc["channel"]):
+            add("warning", "critical-optional-only", outline_path, sc["line"],
+                "Critical scene '%s' is carried only by optional channels." % sc["id"])
+    written = {(t.scene, t.name) for s in scripts for t in s.tags if t.kind == "channel"}
+    present = {sid for s in scripts for sid, _ in s.scenes}
+    for sc in outline or []:
+        if sc["id"] in present:
+            for cid in sc["support"]:
+                if cid.lower() in TEXT_CHANNELS and (sc["id"], cid.lower()) not in written:
+                    add("warning", "missing-channel", outline_path, sc["line"],
+                        "Scene '%s' plans '%s' text but has no channel: %s tag." % (sc["id"], cid, cid))
+    for s in scripts:
+        for t in s.tags:
+            if t.kind == "channel" and t.name not in CHANNELS:
+                add("warning", "unknown-channel", t.file, t.line, "Unknown channel '%s'." % t.name)
 
     for m in (bible or {}).get("mysteries", []):
         if not m["answer"]:
