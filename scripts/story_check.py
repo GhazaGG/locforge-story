@@ -126,8 +126,74 @@ def parse_outline(text):
 
 # --- script loaders ----------------------------------------------------------
 
+TAG_SLASH = re.compile(r"^//\s*(setup|payoff)\s*:\s*(.+?)\s*$", re.I)
+TAG_HASH = re.compile(r"^#\s*(setup|payoff)\s*:\s*(.+?)\s*$", re.I)
+SPEAKER = re.compile(r"^([^\s:{}\[\]<>\"][^:{}\[\]<>\"]{0,40}?)\s*:\s+(\S.*)$")
+
+
+def _add_tags(script, n, m):
+    for name in _csv(m.group(2)):
+        script.tags.append(Tag(script.path, n, m.group(1).lower(), name.lower()))
+
+
+def _add_line(script, n, scene, speaker, text):
+    text = text.strip()
+    if text:
+        script.lines.append(Line(script.path, n, scene, speaker, text))
+
+
+def _add_text(script, n, scene, text):
+    m = SPEAKER.match(text)
+    if m and len(m.group(1).split()) <= 3:
+        _add_line(script, n, scene, m.group(1).strip(), m.group(2))
+    else:
+        _add_line(script, n, scene, None, text)
+
+
+INK_KNOT = re.compile(r"^={2,}\s*(function\s+)?(\w+)")
+INK_STITCH = re.compile(r"^=\s*\w+\s*$")
+INK_SKIP = re.compile(r"^(?:VAR|CONST|INCLUDE|EXTERNAL|LIST|TODO)\b|^->|^<-")
+INK_MARKERS = re.compile(r"^(?:(?:[*+]|-(?!>))\s*)+(?:\(\w+\)\s*)?")
+
+
 def load_ink(path, text):
-    return Script(path)  # replaced in Task 2
+    s = Script(path)
+    scene, in_func, in_block = None, False, False
+    for n, raw in enumerate(text.splitlines(), 1):
+        line = raw.strip()
+        if in_block:
+            in_block = "*/" not in line
+            continue
+        if line.startswith("/*"):
+            in_block = "*/" not in line
+            continue
+        m = TAG_SLASH.match(line)
+        if m:
+            _add_tags(s, n, m)
+            continue
+        if not line or line.startswith("//"):
+            continue
+        m = INK_KNOT.match(line)
+        if m:
+            in_func = bool(m.group(1))
+            scene = None if in_func else m.group(2)
+            if scene:
+                s.scenes.append((scene, n))
+            continue
+        if INK_STITCH.match(line):
+            continue
+        if in_func or line.startswith("~") or line.startswith("{"):
+            s.unchecked += 1
+            continue
+        if INK_SKIP.match(line):
+            continue
+        body = INK_MARKERS.sub("", line)
+        body = re.sub(r"\s*//.*$", "", body)
+        body = re.sub(r"\s*->.*$", "", body)
+        body = re.sub(r"\s#.*$", "", body)
+        body = body.replace("[", "").replace("]", "")
+        _add_text(s, n, scene, body)
+    return s
 
 
 def load_yarn(path, text):
