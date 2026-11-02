@@ -2,18 +2,19 @@
 
 An open-source agent skill for writing game stories, scenarios and dialogue.
 
-A **writer** agent drafts your story bible, outline and scenes straight into **Ink, Yarn Spinner or Ren'Py**. A separate **editor** agent reviews each scene against proven story techniques. A script checks every scene against your bible: unknown speakers, dead characters who talk, setups without payoffs, wrong term spellings and lines too long for the dialog box.
+A **writer** agent drafts your story bible, outline and scenes straight into **Ink, Yarn Spinner or Ren'Py**. A separate **editor** agent reviews each scene against proven story techniques. A script checks every scene against your bible: unknown speakers, dead characters who talk, setups without payoffs, wrong term spellings, lines too long for the dialog box, and critical beats carried only by optional channels.
 
 ## What you get
 
 - **Story bible** template: characters (want, need, lie, voice, words they never say), glossary, canon status, and mysteries with their true answers
 - **Outline**: a beat sheet for the framework you pick, and scenes with goal, conflict, outcome and value shift
+- **Delivery map**: for each scene, how it reaches the player (dialogue, cutscene, narration, quest, objects, barks, mechanics or UI), so no critical beat hides in an optional note
 - **Scenes** in your engine's format, revised until the editor accepts them or two rounds pass
 - **story_check.py**: Python 3.9+, no dependencies
 
 ## Techniques
 
-Save the Cat, three-act, Hero's Journey, Story Circle, Kishōtenketsu, seven-point, MICE, Fichtean curve · in medias res, cold open, iceberg, mystery box, setup and payoff · scene and sequel, value shift, enter late and leave early, try-fail · want/need/lie, voice profiles, subtext, barks, VO and subtitle limits · Ashwell's branching patterns, meaningful choice, delayed consequence, storylets, ludonarrative harmony · localization-ready writing.
+Save the Cat, three-act, Hero's Journey, Story Circle, Kishōtenketsu, seven-point, MICE, Fichtean curve · in medias res, cold open, iceberg, mystery box, setup and payoff · scene and sequel, value shift, enter late and leave early, try-fail · want/need/lie, voice profiles, subtext, barks, VO and subtitle limits · Ashwell's branching patterns, meaningful choice, delayed consequence, storylets, ludonarrative harmony · delivery channels and environmental storytelling · localization-ready writing.
 
 ## Install
 

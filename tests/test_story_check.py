@@ -432,6 +432,53 @@ def test_glossary_avoid_with_capitals_is_case_sensitive():
     ]
 
 
+# --- Delivery map ------------------------------------------------------------
+
+DELIVERY_OUTLINE = """
+# Outline
+
+### s01 Letter
+- critical: yes
+- channel: object
+- support: barks
+### s02 Return
+- critical: yes
+- channel: cutscene
+- support: object, ui, smell
+### s03 Later
+- critical: no
+- channel: barks
+- support: quest
+"""
+
+DELIVERY_INK = """
+=== s01 ===
+// channel: object
+A letter on the desk.
+=== s02 ===
+// channel: object, gossip
+Mira: You came back.
+"""
+
+
+def test_parse_outline_delivery_fields():
+    o = story_check.parse_outline(DELIVERY_OUTLINE)
+    assert o[0]["critical"] == "yes" and o[0]["channel"] == ["object"]
+    assert o[1]["support"] == ["object", "ui", "smell"]
+
+
+def test_delivery_checks():
+    d = story({"bible.md": "## Characters\n### Mira\n", "outline.md": DELIVERY_OUTLINE, "a.ink": DELIVERY_INK})
+    assert found(d) == [
+        ("critical-optional-only", "outline.md", 3),
+        ("missing-channel", "outline.md", 3),
+        ("missing-channel", "outline.md", 7),
+        ("missing-scene", "outline.md", 11),
+        ("unknown-channel", "a.ink", 5),
+        ("unknown-channel", "outline.md", 7),
+    ]
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for t in tests:

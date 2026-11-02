@@ -18,6 +18,11 @@ Framework: Story Circle (You, Need, Go, Search, Find, Take, Return, Change). Pat
 - outcome: No, and Iona reveals she knows about the dam.
 - shift: safe to threatened
 - setup: dam
+- critical: yes
+- channel: dialogue
+- support:
+- verb: -
+- cost: 7 lines
 
 ### roof The roof instrument
 - chars: Mira, Iona
@@ -25,6 +30,11 @@ Framework: Story Circle (You, Need, Go, Search, Find, Take, Return, Change). Pat
 - conflict: The sky is clouded; the instrument is broken.
 - outcome: Yes, but the lens is the only way to fix it.
 - shift: doubt to fear
+- critical: yes
+- channel: dialogue
+- support: object
+- verb: read the chart
+- cost: 4 lines, 1 note
 
 ### choice The lens
 - chars: Mira, Iona
@@ -33,3 +43,8 @@ Framework: Story Circle (You, Need, Go, Search, Find, Take, Return, Change). Pat
 - outcome: The player decides; both paths end the night.
 - shift: alone to trusting, or safe to isolated
 - payoff: dam
+- critical: yes
+- channel: dialogue
+- support:
+- verb: give or keep the lens
+- cost: 7 lines, 2 branches

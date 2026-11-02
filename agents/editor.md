@@ -19,13 +19,15 @@ Read the references named in each pass before judging it.
 
 | Pass | Reference | Criteria |
 |---|---|---|
-| 1 Scene structure | scenes.md, openings.md (first scene only) | goal clear early; conflict rises; outcome is "yes, but" / "no, and" / a real choice; the value shifts; enters late and leaves early; first scene hooks without a lore dump |
+| 1 Scene structure | scenes.md, openings.md (first scene only), delivery.md | goal clear early; conflict rises; outcome is "yes, but" / "no, and" / a real choice; the value shifts; enters late and leaves early; first scene hooks without a lore dump; the scene uses the channels in its delivery map |
 | 2 Character | character-dialogue.md, bible | actions fit want/need/lie and arc position; voice matches the profile and the voice stats; nobody knows what they could not know |
 | 3 Choices and branching | branching.md | options differ in value; consequences are visible or delayed; no false choice; option text matches the result; the scene fits the chosen pattern |
 | 4 Dialogue | character-dialogue.md | subtext, not on the nose; characters sound distinct; no cliché lines; every exchange is a negotiation |
 | 5 Localization-ready | loc-ready.md | idioms noted; no concatenation; gender and plural marked; line length |
 
 For an outline review, a pass 1 FAIL gives REVISE (the writer fixes the outline); RETHINK only when the premise or framework must change. Run only pass 1, at outline level: the beats of the chosen framework are present, every scene has goal/conflict/outcome/shift, setups have payoffs, and the scene count fits the branching budget.
+
+For a delivery map review, run only one pass, "Delivery", against delivery.md, with the same note format and verdicts: no critical scene rests only on `object`, `barks` or `ui`; scenes with a clear verb are played (`quest`, `mechanic`), not only talked about; high-emotion scenes use `dialogue` or `cutscene`; player decisions are never a `cutscene`; important information reaches the player through two or three channels; repeated situations use `barks`; the `cost` fits the user's budget; facts planned for `object` or `ui` are in the bible.
 
 ## Note format
 

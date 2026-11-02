@@ -18,6 +18,11 @@ Framework: <framework from the bible>. Pattern: <branching pattern from referenc
 - shift: <value at start> to <value at end>
 - setup: <tags planted here, comma-separated>
 - payoff:
+- critical: <yes / no: must the player understand this to follow the plot?>
+- channel: <main channel id from references/delivery.md>
+- support: <other channel ids, comma-separated>
+- verb: <what the player does, or ->
+- cost: <for example 6 VO lines, 2 notes>
 
 ### s02 <Title>
 - chars: <names>
@@ -27,3 +32,8 @@ Framework: <framework from the bible>. Pattern: <branching pattern from referenc
 - shift:
 - setup:
 - payoff: <tags paid off here>
+- critical:
+- channel:
+- support:
+- verb:
+- cost:

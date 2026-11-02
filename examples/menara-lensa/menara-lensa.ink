@@ -13,6 +13,8 @@ Mira stops with her hand on the door.
 
 === roof ===
 The roof instrument points at a sky full of cloud.
+// channel: object
+A chart in Iona's hand, pinned under the lens: second flood, three weeks from tonight.
 Iona: My charts say the water rises again in three weeks. Two, if it keeps raining.
 Mira: Charts can be wrong.
 Iona: Then let me prove it. The Aetherium frame is fine. Only the lens is cracked.
