@@ -21,7 +21,7 @@ If `bible.md`, `outline.md` or scripts exist in the story folder, read them firs
 4. Framework: Save the Cat, three-act, Hero's Journey, Story Circle, Kishōtenketsu, seven-point, or free (one line each from `references/structure.md` if the user is unsure)
 5. Branching pattern from `references/branching.md` (recommend Branch and Bottleneck when unsure)
 
-If the user only wants a scene reviewed, skip to step 4.3 with that scene.
+If the user only wants a scene reviewed, run steps 4.2–4.3 on that scene (check, then edit) and show the notes; do not revise unless the user asks.
 
 ### 2. Bible
 
@@ -29,7 +29,7 @@ Act as the writer (`agents/writer.md`). Copy `templates/bible.md` to the story f
 
 ### 3. Outline
 
-As the writer, copy `templates/outline.md` and fill in the beat sheet and the scenes. Then run the editor on the outline (pass 1 only, see "Running the editor"). Show the outline with the editor's notes. **Stop until the user approves.**
+As the writer, copy `templates/outline.md` and fill in the beat sheet and the scenes. Then run the editor on the outline: pass 1 only, with the bible and the outline as input (no scene, no script output), see "Running the editor". Show the outline with the editor's notes. **Stop until the user approves.**
 
 ### 4. Scenes
 
@@ -38,8 +38,8 @@ For each scene in outline order:
 1. **Draft.** As the writer, write the scene into the engine file.
 2. **Check.** Run `python <skill-dir>/scripts/story_check.py <story-folder> --json`. If `python` is not found, try `python3`, then `py -3`. If a LocForge Branch skill exists next to this one (`<skill-dir>/../locforge-branch*/scripts/branch_check.py`), also run `python <that path> <story-folder>`.
 3. **Edit.** Run the editor (see below) with the bible, the outline, the scene file and both outputs.
-4. **Revise.** On `REVISE`, the writer fixes only the flagged items, then repeat 2–3. At most 2 revision rounds.
-5. **Show.** Show the scene and any notes still open. On `RETHINK`, stop and ask the user how to change the outline.
+4. **Revise.** On `REVISE`, the writer fixes only the flagged items, then repeat 2–3. At most 2 revision rounds. If the writer disagrees with a note, it says why in one sentence. That note is not sent back to the editor; it is shown to the user as open in step 5.
+5. **Show.** Show the scene, any notes still open (with the writer's one-line reason where it disagreed) and the writer's "Proposed canon", and ask the user to approve the canon. On `RETHINK`, stop and ask the user how to change the outline. If the verdict is still `REVISE` after 2 rounds, show the open notes and let the user decide whether to continue.
 
 If the user says "continue all", run the next scenes without stopping after each one. Still stop on `RETHINK` and after the last scene.
 
@@ -53,7 +53,7 @@ If the user says "continue all", run the next scenes without stopping after each
 
 The editor must not grade its own writing.
 
-- **If you can start a subagent** (for example the Agent/Task tool in Claude Code): start one with the contents of `agents/editor.md` as its instructions. Give it the file paths of the bible, the outline and the scene, plus the `story_check` output. Do not give it this conversation. Use its notes as returned.
+- **If you can start a subagent** (for example the Agent/Task tool in Claude Code): start one whose instructions are the contents of `agents/editor.md`, plus: the absolute path of `<skill-dir>` (so it can read `references/`), the absolute paths of the bible, the outline and the scene file, and the full `story_check --json` output (and Branch output, if any) pasted into the prompt. Do not give it this conversation. Use its notes as returned.
 - **Otherwise:** say "Switching to editor", read `agents/editor.md`, and review the scene as if someone else wrote it. Then say "Back to writer".
 
 ## Rules
