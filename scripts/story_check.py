@@ -233,7 +233,8 @@ RPY_LABEL = re.compile(r"^label\s+([\w.]+)\s*(?:\(.*\))?\s*:")
 RPY_PY = re.compile(r"^(?:init\s+)?(?:-?\d+\s+)?python\b.*:\s*$")
 STR = r'"((?:[^"\\]|\\.)*)"'
 RPY_NAMED = re.compile(r"^" + STR + r"\s+" + STR)
-RPY_SAY = re.compile(r"^(\w+)\s+" + STR)
+RPY_SAY = re.compile(r"^(\w+)(?:\s+[\w@.]+)*\s+" + STR)
+RPY_UI = re.compile(r"^(?:screen|style|transform)\b.*:\s*$")
 RPY_CHOICE = re.compile(r"^" + STR + r"\s*(?:if\s.*)?:\s*$")
 RPY_NARR = re.compile(r"^" + STR + r"\s*(?:with\s.*|nointeract)?$")
 RPY_NARRATOR = {"narrator", "centered", "extend", "nvl"}
@@ -262,15 +263,16 @@ def _rpy_text(text):
 
 def load_renpy(path, text, who):
     s = Script(path)
-    scene, py_indent = None, None
+    scene, skip_indent, skip_counts = None, None, True
     for n, raw in enumerate(text.splitlines(), 1):
         line = raw.strip()
         indent = len(raw) - len(raw.lstrip())
-        if py_indent is not None:
-            if line and indent <= py_indent:
-                py_indent = None
+        if skip_indent is not None:
+            if line and indent <= skip_indent:
+                skip_indent = None
             else:
-                s.unchecked += bool(line)
+                if skip_counts:
+                    s.unchecked += bool(line)
                 continue
         m = TAG_HASH.match(line)
         if m:
@@ -279,7 +281,10 @@ def load_renpy(path, text, who):
         if not line or line.startswith("#") or line.startswith("define "):
             continue
         if RPY_PY.match(line):
-            py_indent = indent
+            skip_indent, skip_counts = indent, True
+            continue
+        if RPY_UI.match(line):
+            skip_indent, skip_counts = indent, False
             continue
         if line.startswith("$"):
             s.unchecked += 1
