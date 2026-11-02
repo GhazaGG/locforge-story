@@ -227,12 +227,83 @@ def load_yarn(path, text):
     return s
 
 
+RPY_CHAR = re.compile(r"""^define\s+(\w+)\s*=\s*Character\(\s*(?:_\(\s*)?(["'])(.*?)\2""")
+RPY_CHAR_NONE = re.compile(r"^define\s+(\w+)\s*=\s*Character\(\s*None\b")
+RPY_LABEL = re.compile(r"^label\s+([\w.]+)\s*(?:\(.*\))?\s*:")
+RPY_PY = re.compile(r"^(?:init\s+)?(?:-?\d+\s+)?python\b.*:\s*$")
+STR = r'"((?:[^"\\]|\\.)*)"'
+RPY_NAMED = re.compile(r"^" + STR + r"\s+" + STR)
+RPY_SAY = re.compile(r"^(\w+)\s+" + STR)
+RPY_CHOICE = re.compile(r"^" + STR + r"\s*(?:if\s.*)?:\s*$")
+RPY_NARR = re.compile(r"^" + STR + r"\s*(?:with\s.*|nointeract)?$")
+RPY_NARRATOR = {"narrator", "centered", "extend", "nvl"}
+RPY_KEYWORDS = {"show", "scene", "hide", "play", "stop", "queue", "voice", "jump", "call", "return",
+                "with", "pause", "image", "define", "default", "label", "menu", "if", "elif", "else",
+                "while", "python", "init", "transform", "screen", "style", "translate", "window",
+                "camera", "at", "renpy"}
+
+
 def renpy_characters(texts):
-    return {}  # replaced in Task 4
+    who = {}
+    for text in texts:
+        for raw in text.splitlines():
+            line = raw.strip()
+            m = RPY_CHAR.match(line)
+            if m:
+                who[m.group(1)] = m.group(3)
+            elif RPY_CHAR_NONE.match(line):
+                who[RPY_CHAR_NONE.match(line).group(1)] = None
+    return who
+
+
+def _rpy_text(text):
+    return re.sub(r"\{[^{}]*\}", "", text.replace('\\"', '"'))
 
 
 def load_renpy(path, text, who):
-    return Script(path)  # replaced in Task 4
+    s = Script(path)
+    scene, py_indent = None, None
+    for n, raw in enumerate(text.splitlines(), 1):
+        line = raw.strip()
+        indent = len(raw) - len(raw.lstrip())
+        if py_indent is not None:
+            if line and indent <= py_indent:
+                py_indent = None
+            else:
+                s.unchecked += bool(line)
+                continue
+        m = TAG_HASH.match(line)
+        if m:
+            _add_tags(s, n, m)
+            continue
+        if not line or line.startswith("#") or line.startswith("define "):
+            continue
+        if RPY_PY.match(line):
+            py_indent = indent
+            continue
+        if line.startswith("$"):
+            s.unchecked += 1
+            continue
+        m = RPY_LABEL.match(line)
+        if m:
+            if not m.group(1).startswith("."):
+                scene = m.group(1)
+                s.scenes.append((scene, n))
+            continue
+        m = RPY_NAMED.match(line)
+        if m:
+            _add_line(s, n, scene, m.group(1), _rpy_text(m.group(2)))
+            continue
+        m = RPY_SAY.match(line)
+        if m and m.group(1) not in RPY_KEYWORDS:
+            var = m.group(1)
+            speaker = None if var in RPY_NARRATOR or (var in who and who[var] is None) else who.get(var, var)
+            _add_line(s, n, scene, speaker, _rpy_text(m.group(2)))
+            continue
+        m = RPY_CHOICE.match(line) or RPY_NARR.match(line)
+        if m:
+            _add_line(s, n, scene, None, _rpy_text(m.group(1)))
+    return s
 
 
 def load_script(path, text, who):
