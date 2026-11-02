@@ -310,6 +310,53 @@ def test_renpy_attributes_and_screens():
     assert "unknown-speaker" not in names(d)
 
 
+INK_EDGE = """# title: Menara
+/* Iona: block
+   Mira: comment */
+// setup: a, b
+=== s01 ===
+{ met_iona:
+    Iona: Again?
+- else:
+    Iona: Who are you?
+}
+{
+- met_iona: Iona: Back so soon?
+- else: Iona: Hello.
+}
+{ visits:
+- 0: Mira: First time.
+}
+* [Agree] Mira: Fine.
+* [Give the lens] -> s02
+Mira: Hi.
+"""
+
+
+def test_ink_global_tags_conditionals_and_choice_prefix():
+    s = story_check.load_ink("x.ink", INK_EDGE)
+    assert [(ln.speaker, ln.text) for ln in s.lines] == [
+        ("Mira", "Fine."), (None, "Give the lens"), ("Mira", "Hi.")]
+    assert s.unchecked == 12
+    assert [t.name for t in s.tags] == ["a", "b"]
+
+
+RPY_TRANSLATE = """translate french strings:
+    old "Start"
+    new "Commencer"
+translate french start_a1b2:
+    m "Bonjour."
+label start:
+    m "Hello."
+"""
+
+
+def test_renpy_translate_blocks_skipped():
+    s = story_check.load_renpy("x.rpy", RPY_TRANSLATE, {"m": "Mira"})
+    assert [(ln.speaker, ln.text) for ln in s.lines] == [("Mira", "Hello.")]
+    assert s.unchecked == 0
+
+
 # --- Task 5: example and templates -------------------------------------------
 
 ROOT = os.path.join(HERE, "..")

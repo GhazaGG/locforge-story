@@ -152,15 +152,19 @@ def _add_text(script, n, scene, text):
 
 INK_KNOT = re.compile(r"^={2,}\s*(function\s+)?(\w+)")
 INK_STITCH = re.compile(r"^=\s*\w+\s*$")
-INK_SKIP = re.compile(r"^(?:VAR|CONST|INCLUDE|EXTERNAL|LIST|TODO)\b|^->|^<-")
+INK_SKIP = re.compile(r"^(?:VAR|CONST|INCLUDE|EXTERNAL|LIST|TODO)\b|^->|^<-|^#")
 INK_MARKERS = re.compile(r"^(?:(?:[*+]|-(?!>))\s*)+(?:\(\w+\)\s*)?")
 
 
 def load_ink(path, text):
     s = Script(path)
-    scene, in_func, in_block = None, False, False
+    scene, in_func, in_block, depth = None, False, False, 0
     for n, raw in enumerate(text.splitlines(), 1):
         line = raw.strip()
+        if depth:  # inside a multi-line { } conditional or switch
+            depth += line.count("{") - line.count("}")
+            s.unchecked += 1
+            continue
         if in_block:
             in_block = "*/" not in line
             continue
@@ -184,6 +188,8 @@ def load_ink(path, text):
             continue
         if in_func or line.startswith("~") or line.startswith("{"):
             s.unchecked += 1
+            if line.startswith("{"):
+                depth = max(0, line.count("{") - line.count("}"))
             continue
         if INK_SKIP.match(line):
             continue
@@ -191,6 +197,8 @@ def load_ink(path, text):
         body = re.sub(r"\s*//.*$", "", body)
         body = re.sub(r"\s*->.*$", "", body)
         body = re.sub(r"\s#.*$", "", body)
+        if body.startswith("[") and body.partition("]")[2].strip():
+            body = body.partition("]")[2].strip()  # choice label is not a speaker
         body = body.replace("[", "").replace("]", "")
         _add_text(s, n, scene, body)
     return s
@@ -234,7 +242,7 @@ RPY_PY = re.compile(r"^(?:init\s+)?(?:-?\d+\s+)?python\b.*:\s*$")
 STR = r'"((?:[^"\\]|\\.)*)"'
 RPY_NAMED = re.compile(r"^" + STR + r"\s+" + STR)
 RPY_SAY = re.compile(r"^(\w+)(?:\s+[\w@.]+)*\s+" + STR)
-RPY_UI = re.compile(r"^(?:screen|style|transform)\b.*:\s*$")
+RPY_UI = re.compile(r"^(?:screen|style|transform|translate)\b.*:\s*$")
 RPY_CHOICE = re.compile(r"^" + STR + r"\s*(?:if\s.*)?:\s*$")
 RPY_NARR = re.compile(r"^" + STR + r"\s*(?:with\s.*|nointeract)?$")
 RPY_NARRATOR = {"narrator", "centered", "extend", "nvl"}
