@@ -197,7 +197,34 @@ def load_ink(path, text):
 
 
 def load_yarn(path, text):
-    return Script(path)  # replaced in Task 3
+    s = Script(path)
+    scene, in_body = None, False
+    for n, raw in enumerate(text.splitlines(), 1):
+        line = raw.strip()
+        if not in_body:
+            if line == "---":
+                in_body = True
+                continue
+            m = re.match(r"^title\s*:\s*(\S+)", line, re.I)
+            if m:
+                scene = m.group(1)
+                s.scenes.append((scene, n))
+            continue
+        if line == "===":
+            in_body, scene = False, None
+            continue
+        m = TAG_SLASH.match(line)
+        if m:
+            _add_tags(s, n, m)
+            continue
+        if not line or line.startswith("//") or re.match(r"^<<.*>>$", line):
+            continue
+        body = re.sub(r"^->\s*", "", line)
+        body = re.sub(r"<<.*?>>", "", body)
+        body = re.sub(r"\s*//.*$", "", body)
+        body = re.sub(r"(^|\s)#\S+", "", body)
+        _add_text(s, n, scene, body)
+    return s
 
 
 def renpy_characters(texts):
