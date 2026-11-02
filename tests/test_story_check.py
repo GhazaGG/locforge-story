@@ -285,6 +285,31 @@ def test_renpy_findings():
     ]
 
 
+# --- Task 4 fix: attributes and screen/style/transform bodies ---------------
+
+RPY_SCREENS = """
+define m = Character("Mira")
+label s01:
+    m happy "Hello there."
+    m happy at left "Again."
+screen main_menu():
+    text "Hello"
+    textbutton "Start" action Start()
+style say_label:
+    color "#fff"
+"""
+
+
+def test_renpy_attributes_and_screens():
+    d = story({"bible.md": BIBLE, "outline.md": OUTLINE, "script.rpy": RPY_SCREENS})
+    who = story_check.renpy_characters([RPY_SCREENS])
+    assert who == {"m": "Mira"}
+    s = story_check.load_renpy("x.rpy", textwrap.dedent(RPY_SCREENS).lstrip(), who)
+    assert [(ln.speaker, ln.text) for ln in s.lines] == [("Mira", "Hello there."), ("Mira", "Again.")]
+    assert s.unchecked == 0
+    assert "unknown-speaker" not in names(d)
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for t in tests:
