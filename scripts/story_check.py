@@ -56,7 +56,7 @@ KV = re.compile(r"^\s*[-*]\s+([A-Za-z_]+)\s*:\s*(.*?)\s*$")
 
 
 def _value(raw):
-    return re.sub(r"\s+#.*$", "", raw).strip()
+    return re.sub(r"\s+#(?:\s.*)?$", "", raw).strip()
 
 
 def parse_bible(text):

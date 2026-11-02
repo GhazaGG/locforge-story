@@ -376,6 +376,29 @@ def test_templates_parse():
         assert [s["id"] for s in story_check.parse_outline(f.read())] == ["s01", "s02"]
 
 
+# --- Bug fix: # inside bible values -------------------------------------------
+
+HASH_BIBLE = """
+## Settings
+- max_line: 90  # box
+
+## Glossary
+### Route 9
+- avoid: Route #9, Rte 9  # wrong forms
+
+## Mysteries
+### Which door?
+- answer: Door #3
+"""
+
+
+def test_hash_inside_values_is_not_a_comment():
+    b = story_check.parse_bible(HASH_BIBLE)
+    assert b["settings"]["max_line"] == "90"
+    assert b["glossary"][0]["avoid"] == ["Route #9", "Rte 9"]
+    assert b["mysteries"][0]["answer"] == "Door #3"
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for t in tests:
