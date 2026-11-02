@@ -191,6 +191,42 @@ def test_no_bible_skips_speaker_checks():
     assert names(d) == ["no-bible", "no-outline"]
 
 
+# --- Task 3: Yarn ------------------------------------------------------------
+
+YARN = """
+title: s01
+tags: intro
+position: 0,0
+---
+Mira: Dengar. #line:a1
+-> Give the lens
+    <<jump s02>>
+-> Mira: Keep it.
+// setup: lens
+<<set $lens to 1>>
+Stranger: Who are you?
+===
+title: s02
+---
+Mi: I fall.
+===
+"""
+
+
+def test_yarn_findings():
+    d = story({"bible.md": BIBLE, "outline.md": OUTLINE, "story.yarn": YARN})
+    assert found(d) == [
+        ("missing-scene", "outline.md", 8),
+        ("mystery-no-answer", "bible.md", 23),
+        ("setup-no-payoff", "story.yarn", 9),
+        ("unknown-speaker", "story.yarn", 11),
+    ]
+    s = story_check.load_yarn("x.yarn", textwrap.dedent(YARN).lstrip())
+    assert [sid for sid, _ in s.scenes] == ["s01", "s02"]
+    assert [(ln.speaker, ln.text) for ln in s.lines[:3]] == [
+        ("Mira", "Dengar."), (None, "Give the lens"), ("Mira", "Keep it.")]
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for t in tests:
