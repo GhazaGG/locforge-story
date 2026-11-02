@@ -338,8 +338,9 @@ def _index(bible):
     return index
 
 
-def _word(phrase):
-    return re.compile(r"(?<!\w)%s(?!\w)" % re.escape(phrase), re.I)
+def _word(phrase, exact=False):
+    flags = 0 if exact else re.I
+    return re.compile(r"(?<!\w)%s(?!\w)" % re.escape(phrase), flags)
 
 
 def check(bible, bible_path, outline, outline_path, scripts):
@@ -353,7 +354,8 @@ def check(bible, bible_path, outline, outline_path, scripts):
     order = {sc["id"]: i for i, sc in enumerate(outline or [])}
     cast = {sc["id"]: {index[x.lower()]["id"] if x.lower() in index else x.lower() for x in sc["chars"]}
             for sc in outline or []}
-    terms = [(g["term"], a, _word(a)) for g in (bible or {}).get("glossary", []) for a in g["avoid"]]
+    terms = [(g["term"], a, _word(a, exact=any(ch.isupper() for ch in a)))
+             for g in (bible or {}).get("glossary", []) for a in g["avoid"]]
     avoid = {c["id"]: [(a, _word(a)) for a in c["avoid"]] for c in (bible or {}).get("characters", [])}
 
     for s in scripts:

@@ -399,6 +399,39 @@ def test_hash_inside_values_is_not_a_comment():
     assert b["mysteries"][0]["answer"] == "Door #3"
 
 
+# --- Bug fix: glossary avoid spellings with capitals match exactly -----------
+
+CASE_BIBLE = """
+## Settings
+- max_line: 120
+
+## Characters
+### Mira
+
+## Glossary
+### Route 9
+- avoid: Route Nine, rte nine
+"""
+
+CASE_OUTLINE = "### s01 Arrival\n- chars: Mira\n"
+
+CASE_INK = """=== s01 ===
+Mira: I drove this route nine years.
+Mira: Take Route Nine north.
+Mira: Take rte nine north.
+Mira: Take RTE NINE north.
+"""
+
+
+def test_glossary_avoid_with_capitals_is_case_sensitive():
+    d = story({"bible.md": CASE_BIBLE, "outline.md": CASE_OUTLINE, "story.ink": CASE_INK})
+    assert found(d) == [
+        ("term-variant", "story.ink", 3),
+        ("term-variant", "story.ink", 4),
+        ("term-variant", "story.ink", 5),
+    ]
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for t in tests:
