@@ -50,7 +50,7 @@ A dramatic question must appear within the first one to three minutes. The quest
 - Cut setup lines that come before it.
 
 **Editor asks:**
-- Is there a question or choice within the first few lines, as counted by the editor?
+- Is there a question or choice within the first 10 lines?
 - Can the editor state the dramatic question in one sentence?
 
 ## Iceberg / need-to-know exposition
