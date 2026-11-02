@@ -1,6 +1,15 @@
 # Outline: Menara Lensa
 
-Framework: Story Circle (You, Need, Go, Search, Find, Take, Return, Change). Pattern: branch and bottleneck.
+Framework: Story Circle (You, Need, Go, Search, Find, Take, Return, Change). Pattern: single choice, two endings.
+
+## Beat sheet
+
+| Step | Scene |
+|---|---|
+| You, Need | arrival |
+| Go, Search | roof |
+| Find, Take | choice |
+| Return, Change | choice |
 
 ### arrival Iona at the door
 - chars: Mira, Iona
