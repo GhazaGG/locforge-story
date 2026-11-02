@@ -43,7 +43,7 @@
 
 ## Glossary
 ### <Term>
-- avoid: <wrong spellings, comma-separated>
+- avoid: <wrong spellings, comma-separated> # capitals match exactly; lowercase matches any case
 - note: <meaning; translate or keep>
 
 ## Canon

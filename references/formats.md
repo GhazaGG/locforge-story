@@ -33,6 +33,7 @@ Scene ids in `outline.md` must match the scene names in the script exactly.
 - Put a tag comment at the end of a dialogue line. Tags must be on their own line.
 - Start narration with up to three words and a colon: anything of that shape before `: ` is read as a speaker.
 - In Ink, expect ` #` and ` ->` to end a line's text; anything after them is not checked.
-- In the bible, ` #` starts a comment; do not use it inside a value.
+- In the bible, ` # ` (a hash with spaces around it) starts a comment; `#9` inside a value is kept.
+- Glossary `avoid` spellings with capitals match exactly (case-sensitive); all-lowercase spellings match any case.
 - Use `Character("[pname]")` in Ren'Py without adding `[pname]` as an alias of that character in the bible.
 - Use single-quoted say lines in Ren'Py; they are not read (use double quotes).
