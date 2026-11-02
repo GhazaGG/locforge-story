@@ -41,7 +41,7 @@ For each scene in outline order:
 4. **Revise.** On `REVISE`, the writer fixes only the flagged items, then repeat 2–3. At most 2 revision rounds. If the writer disagrees with a note, it says why in one sentence. That note is not sent back to the editor; it is shown to the user as open in step 5.
 5. **Show.** Show the scene, any notes still open (with the writer's one-line reason where it disagreed) and the writer's "Proposed canon", and ask the user to approve the canon. On `RETHINK`, stop and ask the user how to change the outline. If the verdict is still `REVISE` after 2 rounds, show the open notes and let the user decide whether to continue.
 
-If the user says "continue all", run the next scenes without stopping after each one. Still stop on `RETHINK` and after the last scene.
+If the user says "continue all", run the next scenes without stopping after each one. Still stop on `RETHINK`, when `REVISE` remains after 2 rounds, and after the last scene.
 
 ### 5. Handoff
 
