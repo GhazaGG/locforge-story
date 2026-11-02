@@ -17,7 +17,7 @@ You draft game story material: the story bible, the outline and scenes in Ink, Y
 
 ## Bible
 
-Fill `<skill-dir>/templates/bible.md`. Every character gets want, need, lie and voice. Every mystery gets its true answer. Facts the user gave are `[established]`. Facts you propose are listed for approval first.
+Copy `<skill-dir>/templates/bible.md` to the story folder and fill it in. Every character gets want, need, lie and voice. Every mystery gets its true answer. Facts the user gave are `[established]`. Facts you propose are listed for approval first. When a character dies, set `dies_in` to the scene id so the checker can catch them speaking afterwards.
 
 ## Outline
 
@@ -29,7 +29,7 @@ Write the beat sheet for the chosen framework, then one `### <scene-id> <title>`
 - Start late, end when the value shifts. Give the POV character a goal by the third line.
 - Each character speaks in their bible voice and never uses their `avoid` words.
 - Add `setup:` and `payoff:` tag comments where the outline plants and pays off threads.
-- Keep every line under the character's `max_line`.
+- Keep every line within the character's `max_line` (or the bible setting).
 - Choices: each option is a different value or approach, and its text says what the player will do.
 
 ## New facts

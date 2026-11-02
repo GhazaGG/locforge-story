@@ -1,7 +1,7 @@
 # Bible: <Story title>
 
 <!-- Free prose sections (Premise, World, Theme, Tone) are for people and the editor.
-     story_check reads only Settings, Characters, Glossary, Canon and Mysteries.
+     story_check reads only Settings, Characters, Glossary and Mysteries.
      Structured lines are "- key: value". Text after " #" is a comment. -->
 
 ## Premise
@@ -25,6 +25,8 @@
 - id: <short-lowercase-id>
 - aliases: <other names the script may use, comma-separated>
 - status: alive
+- dies_in: <scene id, if they die>   # leave empty if they live
+- max_line: <optional override of the setting>
 - want: <outer goal>
 - need: <inner need>
 - lie: <false belief they start with>
@@ -47,6 +49,7 @@
 ## Canon
 - [established] <fact that is fixed>
 - [provisional] <fact proposed and approved, may still change>
+- [under-review] <fact proposed but not yet approved>
 
 ## Mysteries
 ### <Question the player asks>
