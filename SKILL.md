@@ -1,6 +1,6 @@
 ---
 name: locforge-story
-description: Writes game stories, scenarios and branching dialogue with a writer agent and a separate editor agent, using proven story techniques (Save the Cat, Story Circle, Kishōtenketsu, in medias res, scene and sequel, meaningful choice) and a script that checks every scene against a story bible. Produces a story bible, an outline and scenes in Ink, Yarn Spinner or Ren'Py. Use when the user asks to write, plan, outline, continue or edit a game story, quest, visual novel, cutscene or dialogue script, build a story bible, or review a scene.
+description: Writes game stories, scenarios and branching dialogue with a writer agent and a separate editor agent, using proven story techniques (Save the Cat, Story Circle, Kishōtenketsu, in medias res, scene and sequel, meaningful choice) and a script that checks every scene against a story bible. Produces a story bible, an outline, a delivery map (how each beat reaches the player: dialogue, cutscene, quest, objects, barks, UI) and scenes in Ink, Yarn Spinner or Ren'Py. Use when the user asks to write, plan, outline, continue or edit a game story, quest, visual novel, cutscene or dialogue script, build a story bible, or review a scene.
 ---
 
 # LocForge Story
@@ -21,7 +21,7 @@ If `bible.md`, `outline.md` or scripts exist in the story folder, read them firs
 4. Framework: Save the Cat, three-act, Hero's Journey, Story Circle, Kishōtenketsu, seven-point, or free (one line each from `references/structure.md` if the user is unsure)
 5. Branching pattern from `references/branching.md` (recommend Branch and Bottleneck when unsure)
 
-If the user only wants a scene reviewed, run steps 4.2–4.3 on that scene (check, then edit) and show the notes; do not revise unless the user asks.
+If the user only wants a scene reviewed, run steps 5.2–5.3 on that scene (check, then edit) and show the notes; do not revise unless the user asks.
 
 ### 2. Bible
 
@@ -31,19 +31,23 @@ Act as the writer (`agents/writer.md`). Copy `templates/bible.md` to the story f
 
 As the writer, copy `templates/outline.md` and fill in the beat sheet and the scenes. Then run the editor on the outline: pass 1 only, with the bible and the outline as input (no scene, no script output), see "Running the editor". Show the outline with the editor's notes. **Stop until the user approves.**
 
-### 4. Scenes
+### 4. Delivery map
+
+As the writer, fill `critical`, `channel`, `support`, `verb` and `cost` for every scene in `outline.md`, using `references/delivery.md`. Run `python <skill-dir>/scripts/story_check.py <story-folder> --json` and fix any `unknown-channel` or `critical-optional-only` warning (`missing-scene` is expected before drafting). Then run the editor on the map: the "Delivery" pass only, with the bible, the outline and the script output as input, see "Running the editor". Show the map as one table (scene, critical, channel, support, verb, cost) with the editor's notes. **Stop until the user approves.**
+
+### 5. Scenes
 
 For each scene in outline order:
 
-1. **Draft.** As the writer, write the scene into the engine file.
+1. **Draft.** As the writer, write the scene into the engine file, including the text of its `support` channels under `channel:` tags.
 2. **Check.** Run `python <skill-dir>/scripts/story_check.py <story-folder> --json`. If `python` is not found, try `python3`, then `py -3`. If a LocForge Branch skill exists next to this one (`<skill-dir>/../locforge-branch*/scripts/branch_check.py`), also run `python <that path> <story-folder>`.
 3. **Edit.** Run the editor (see below) with the bible, the outline, the scene file and both outputs.
-4. **Revise.** On `REVISE`, the writer fixes only the flagged items, then repeat 2–3. At most 2 revision rounds. If the writer disagrees with a note, it says why in one sentence. That note is not sent back to the editor; it is shown to the user as open in step 5.
+4. **Revise.** On `REVISE`, the writer fixes only the flagged items, then repeat 2–3. At most 2 revision rounds. If the writer disagrees with a note, it says why in one sentence. That note is not sent back to the editor; it is shown to the user as open in step 5.5.
 5. **Show.** Show the scene, any notes still open (with the writer's one-line reason where it disagreed) and the writer's "Proposed canon", and ask the user to approve the canon. On `RETHINK`, stop and ask the user how to change the outline. If the verdict is still `REVISE` after 2 rounds, show the open notes and let the user decide whether to continue.
 
 If the user says "continue all", run the next scenes without stopping after each one. Still stop on `RETHINK`, when `REVISE` remains after 2 rounds, and after the last scene.
 
-### 5. Handoff
+### 6. Handoff
 
 - Add the approved "Proposed canon" facts to the bible as `[provisional]`.
 - Summarize: scenes written, open editor notes, remaining script warnings.
