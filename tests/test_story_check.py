@@ -118,6 +118,79 @@ def test_bom_and_json_output():
     assert data["stats"] == {}
 
 
+# --- Task 2: Ink -------------------------------------------------------------
+
+INK = """
+VAR lens = 0
+=== s01 ===
+Mira: Dengar. The roof needs one clear lens.
+Iona: I can fix it.
+* [Give the lens] -> s02
+* Kapten Mira: Keep it. -> s03
+// setup: lens
+// setup: storm
+~ lens = 1
+= stitch
+Iona: This line is far too long for the Iona box.
+Narration mentions Etherium once.
+=== s02 ===
+Mi: Oke, I fall now. #sad
+Ghost: Boo.
+=== s03 ===
+- Mira: I should be dead.
+// payoff: lens
+// payoff: key
+=== s04 ===
+Iona: Not planned.
+=== function helper() ===
+~ return 1
+"""
+
+
+def test_ink_findings():
+    d = story({"bible.md": BIBLE, "outline.md": OUTLINE, "story.ink": INK})
+    assert found(d) == [
+        ("avoid-word", "story.ink", 14),
+        ("dead-speaker", "story.ink", 17),
+        ("long-line", "story.ink", 11),
+        ("mystery-no-answer", "bible.md", 23),
+        ("payoff-no-setup", "story.ink", 19),
+        ("setup-no-payoff", "story.ink", 8),
+        ("term-variant", "story.ink", 12),
+        ("unchecked", "story.ink", 0),
+        ("uninvited-speaker", "story.ink", 17),
+        ("unknown-speaker", "story.ink", 15),
+        ("unplanned-scene", "story.ink", 20),
+    ]
+
+
+def test_ink_lines_and_scenes():
+    s = story_check.load_ink("x.ink", textwrap.dedent(INK).lstrip())
+    assert [sid for sid, _ in s.scenes] == ["s01", "s02", "s03", "s04"]
+    first = s.lines[:4]
+    assert [(ln.speaker, ln.text) for ln in first] == [
+        ("Mira", "Dengar. The roof needs one clear lens."),
+        ("Iona", "I can fix it."),
+        (None, "Give the lens"),
+        ("Kapten Mira", "Keep it."),
+    ]
+    assert s.unchecked == 2
+
+
+def test_missing_scene_and_voice_stats():
+    ink = "=== s01 ===\nMira: Dengar dengar lensa.\nMi: Lensa retak.\n"
+    d = story({"bible.md": BIBLE, "outline.md": OUTLINE, "a.ink": ink})
+    assert ("missing-scene", "outline.md", 6) in found(d)
+    assert ("missing-scene", "outline.md", 8) in found(d)
+    _, stats = story_check.run([d])
+    assert stats == {"Mira": {"lines": 2, "words_per_line": 2.5, "top_words": ["dengar", "lensa", "retak"]}}
+
+
+def test_no_bible_skips_speaker_checks():
+    d = story({"a.ink": "=== s01 ===\nAnyone: Hello there.\n"})
+    assert names(d) == ["no-bible", "no-outline"]
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for t in tests:
