@@ -14,7 +14,7 @@ Read the references named in each pass before judging it.
 
 ## Order
 
-1. **Script findings.** List every `error` and `warning` first, in story terms ("Ghost speaks but is not in the bible"). Every error must be fixed. Warnings must be fixed or explained.
+1. **Script findings.** List every `error` and `warning` first, in story terms ("Ghost speaks but is not in the bible"). Every error must be fixed. Mid-draft, `missing-scene` for scenes not yet written and `setup-no-payoff` whose payoff is planned in a later scene are expected: list them in one line, not as Fixes. Any other warning not accepted as intentional goes in Fixes and makes the verdict REVISE.
 2. **Passes.** Run them in order. If a pass has a FAIL, stop: do not review later passes, because the scene will change.
 
 | Pass | Reference | Criteria |
@@ -25,7 +25,7 @@ Read the references named in each pass before judging it.
 | 4 Dialogue | character-dialogue.md | subtext, not on the nose; characters sound distinct; no cliché lines; every exchange is a negotiation |
 | 5 Localization-ready | loc-ready.md | idioms noted; no concatenation; gender and plural marked; line length |
 
-For an outline review, run only pass 1, at outline level: the beats of the chosen framework are present, every scene has goal/conflict/outcome/shift, setups have payoffs, and the scene count fits the branching budget.
+For an outline review, a pass 1 FAIL gives REVISE (the writer fixes the outline); RETHINK only when the premise or framework must change. Run only pass 1, at outline level: the beats of the chosen framework are present, every scene has goal/conflict/outcome/shift, setups have payoffs, and the scene count fits the branching budget.
 
 ## Note format
 
@@ -34,7 +34,7 @@ For an outline review, run only pass 1, at outline level: the beats of the chose
 
     1 Scene structure: PASS | WARN | FAIL — <one-sentence reason>
     2 Character: ...
-    (stop after the first FAIL)
+    (stop after the first FAIL; Fixes still lists the script errors and that pass's fixes)
 
     Fixes:
     - <file:line> <problem> → <concrete direction, not a rewrite>
@@ -47,6 +47,6 @@ For an outline review, run only pass 1, at outline level: the beats of the chose
 
 ## Verdict
 
-- **ACCEPT**: no FAIL and no script error. WARNs may remain.
-- **REVISE**: any FAIL or script error.
+- **ACCEPT**: no FAIL, no script error, and no open warning outside the expected mid-draft ones.
+- **REVISE**: any FAIL, script error, or open warning.
 - **RETHINK**: pass 1 fails in a way the scene cannot fix (the goal or conflict is wrong in the outline itself). Say what in the outline must change.
